@@ -1,5 +1,7 @@
 # goodweDT2mqtt
-Polls GoodWE-DT Inverter on the direct way (No SEMS, No Cloud!) and publishes Values to mqtt.
+Polls GoodWE-DT Inverter on the direct way (No SEMS, No Cloud!) and publishes Values to mqtt. Forked from [https://github.com/int2001/goodweDT2mqtt](https://github.com/int2001/goodweDT2mqtt)
+
+Added: configuration json, user/password, updated packages for npm, 
 
 ## SetUp:
 * Place `package.json` and `goodwe.js` in one folder (`git clone`)
@@ -13,6 +15,9 @@ Polls GoodWE-DT Inverter on the direct way (No SEMS, No Cloud!) and publishes Va
 ## Operation:
 * Run in f.ex. in pm2 or in tmux
 * Polls Data from Inverter every 15seconds (changeable with var `interval` in Script)
+
+## Docker
+* Build a docker container using the dockerfile
 
 Disclaimer:
 Only proof-of-concept.

@@ -1,19 +1,24 @@
 #!/usr/bin/env node
-var dgram = require('dgram');
-var Parser = require("binary-parser").Parser;
-var mqtt = require('mqtt');
-var crc = require('crc');
+const dgram = require('dgram');
+const Parser = require("binary-parser").Parser;
+const mqtt = require('mqtt');
+const crc = require('crc');
+const config = require('./config.json');
+
 const interval = 15;
-
-// CONFIG START
-var mqclient = mqtt.connect('mqtt://192.168.1.193');
-var HOST = '192.168.1.209'; // IP of GoodWE-WLAN-Stick
-// CONFIG END
-
-var PORT = 8899;
+const PORT = 8899;
 const msg = Buffer.from('7f0375940049d5c2', 'hex');
 
-var ipHeader = new Parser()
+const HOST = config.inverter_ip;
+const TOPIC = config.mqtt_topic;
+const options = {
+	username: config.mqtt_user,
+	password: config.mqtt_pass
+};
+
+const mqclient = mqtt.connect(config.mqtt_broker, options);
+
+const ipHeader = new Parser()
 	.skip(11)
 	.uint16('vpv1', { formatter: divideBy10 })
 	.uint16('ipv1', { formatter: divideBy10 })
@@ -48,25 +53,25 @@ function closer(arg) {
 }
 
 const req_it = async function () {
-	var client = dgram.createSocket({ type: 'udp4', reuseAddr: true });
+	const client = dgram.createSocket({ type: 'udp4', reuseAddr: true });
 
 	client.on('listening', function () {
-		var address = client.address();
+		const address = client.address();
 		console.log('UDP Server listening on ' + address.address + ":" + address.port);
 	});
 
-	client.on('message', function (message, remote) {
-		var crcdings = message.slice(message.length - 2);
-		var payload = message.slice(2, message.length - 2);
+	client.on('message', function (message) {
+		const crcdings = message.slice(message.length - 2);
+		const payload = message.slice(2, message.length - 2);
 
 		const computedCrc = Buffer.alloc(2);
 		computedCrc.writeUInt16LE(crc.crc16modbus(payload), 0);
 
 		if (computedCrc.equals(crcdings)) {
-			var stats = ipHeader.parse(message);
+			const stats = ipHeader.parse(message);
 			console.log(stats);
 			if (stats.pwrtoday < 6000) {
-				mqclient.publish('pvwest/tele', JSON.stringify(stats));
+				mqclient.publish(TOPIC, JSON.stringify(stats));
 			} else {
 				console.log('invalid Data: ' + crcdings.toString('hex') + '/' + computedCrc.toString('hex'));
 			}
@@ -75,12 +80,12 @@ const req_it = async function () {
 		}
 	});
 
-	client.send(msg, 0, msg.length, PORT, HOST, function (err, bytes) {
+	client.send(msg, 0, msg.length, PORT, HOST, function (err) {
 		if (err) throw err;
 		console.log('UDP message sent to ' + HOST + ':' + PORT);
 		setTimeout(closer, ((interval * 1000) / 3), client);
 	});
-}
+};
 
 console.log("Started");
 req_it();

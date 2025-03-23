@@ -1,0 +1,7 @@
+{
+    "mqtt_broker": "mqtt://192.168.1.100",
+    "mqtt_user": "mqttuser",
+    "mqtt_pass": "yourpassword",
+    "inverter_ip": "192.168.1.209",
+    "mqtt_topic": "dachsolar"
+}
